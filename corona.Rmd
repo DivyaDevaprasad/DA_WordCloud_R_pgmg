@@ -1,0 +1,47 @@
+---
+title: "corona"
+author: "DMD"
+date: "02/02/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(rtweet)
+vir = search_tweets("#corona OR #coronavirus", n = 3000, include_rts =FALSE)
+head(vir$text,20)
+
+```
+```{r}
+library(tidyverse)       #inspect(viruscorp)
+library(tm)
+viruscorp = Corpus(VectorSource(vir$text))
+
+Tospace = content_transformer(function(x,pattern) gsub(pattern, "",x))
+
+cleanvirus = tm_map(viruscorp, Tospace, "\n")
+cleanvirus = tm_map(cleanvirus, Tospace, "#*")
+cleanvirus = tm_map(cleanvirus, Tospace, "https.*")
+cleanvirus = tm_map(cleanvirus, Tospace, "@*")
+cleanvirus = tm_map(cleanvirus, Tospace, "&amp")
+cleanvirus = tm_map(cleanvirus, removePunctuation)
+cleanvirus = tm_map(cleanvirus, removeWords, stopwords("en"))
+
+tdm = TermDocumentMatrix(cleanvirus)
+m = as.matrix(tdm)
+v = sort(rowSums(m),decreasing = TRUE)
+
+virusdf = data.frame(word = names(v), freq = v, stringsAsFactors = FALSE, row.names = NULL)
+#virusdf
+
+
+```
+
+```{r}
+library(wordcloud2)
+top20 = head(virusdf,40)
+wordcloud2(top20, backgroundColor = "Grey" ,size = 3.0,color = "random-dark")
+
+```
